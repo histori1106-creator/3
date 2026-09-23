@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Лабораторна робота – Кількість теплоти</title>
+
+<style>
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#eef3f8;
+    color:#20252b;
+}
+
+header{
+    background:#174a7c;
+    color:white;
+    text-align:center;
+    padding:18px;
+}
+
+header h1{
+    margin:0;
+    font-size:25px;
+}
+
+header p{
+    margin:8px 0 0;
+    font-size:15px;
+}
+
+.container{
+    max-width:1200px;
+    margin:20px auto;
+    padding:0 15px;
+}
+
+.lab-window,
+.results{
+    background:white;
+    border-radius:15px;
+    box-shadow:0 4px 18px rgba(0,0,0,.12);
+    padding:22px;
+}
+
+/* =========================
+   ДОСЛІДИ
+========================= */
+
+.experiments{
+    display:flex;
+    gap:8px;
+    margin-bottom:18px;
+}
+
+.experiment-btn{
+    flex:1;
+    padding:13px 10px;
+    border:0;
+    border-radius:8px;
+    background:#dce7f2;
+    color:#174a7c;
+    font-weight:bold;
+    cursor:pointer;
+    font-size:14px;
+}
+
+.experiment-btn.active{
+    background:#174a7c;
+    color:white;
+}
+
+/* =========================
+   ОПИС
+========================= */
+
+.description{
+    background:#eef6ff;
+    border-left:5px solid #2878bd;
+    border-radius:6px;
+    padding:14px;
+    margin-bottom:18px;
+}
+
+.description h2{
+    margin:0 0 8px;
+    color:#174a7c;
+    font-size:20px;
+}
+
+.description p{
+    margin:0;
+    line-height:1.5;
+}
+
+/* =========================
+   ПАРАМЕТРИ
+========================= */
+
+.parameters{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px;
+}
+
+.parameter{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+}
+
+.parameter label{
+    font-weight:bold;
+    font-size:14px;
+}
+
+input,
+select{
+    width:100%;
+    padding:10px;
+    border:1px solid #b8c5d1;
+    border-radius:7px;
+    font-size:15px;
+    background:white;
+}
+
+#customHeatBox{
+    display:none;
+    margin-top:12px;
+    padding:12px;
+    background:#f5f7fa;
+    border-radius:8px;
+}
+
+/* =========================
+   СИМУЛЯЦІЯ
+========================= */
+
+.simulation{
+    position:relative;
+    height:390px;
+    margin-top:20px;
+    overflow:hidden;
+    border-radius:12px;
+    background:linear-gradient(#fafdff,#e8eff5);
+}
+
+/* Склянка */
+
+.beaker{
+    position:absolute;
+    bottom:50px;
+    left:50%;
+    transform:translateX(-50%);
+    width:310px;
+    height:190px;
+    border:5px solid #59636e;
+    border-radius:8px 8px 35px 35px;
+    overflow:hidden;
+    background:rgba(255,255,255,.3);
+}
+
+.liquid{
+    position:absolute;
+    bottom:0;
+    left:0;
+    width:100%;
+    height:60%;
+    background:rgba(45,150,220,.65);
+    transition:height .3s,background .3s;
+}
+
+/* =========================
+   ТЕРМОМЕТР
+========================= */
+
+.thermometer{
+    position:absolute;
+    right:15%;
+    top:58px;
+    width:48px;
+    height:245px;
+    border:3px solid #555;
+    border-radius:25px;
+    background:white;
+}
+
+.thermometer-tube{
+    position:absolute;
+    bottom:30px;
+    left:17px;
+    width:8px;
+    height:185px;
+    background:#ddd;
+    border-radius:10px;
+    overflow:hidden;
+}
+
+.mercury{
+    position:absolute;
+    bottom:0;
+    width:100%;
+    height:15%;
+    background:#e63946;
+    border-radius:8px;
+    transition:height .15s;
+}
+
+.thermometer-bulb{
+    position:absolute;
+    bottom:5px;
+    left:8px;
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    background:#e63946;
+}
+
+/* Показ температури над термометром */
+
+.current-temperature{
+    position:absolute;
+    top:-39px;
+    left:50%;
+    transform:translateX(-50%);
+    width:130px;
+    text-align:center;
+    font-weight:bold;
+    color:#c1121f;
+    font-size:15px;
+    line-height:20px;
+    white-space:nowrap;
+    z-index:20;
+}
+
+/* =========================
+   НАГРІВАЧ
+========================= */
+
+.heater{
+    position:absolute;
+    bottom:25px;
+    left:50%;
+    transform:translateX(-50%);
+    width:220px;
+    height:25px;
+    background:#444;
+    border-radius:10px;
+}
+
+.heater-coil{
+    position:absolute;
+    top:-8px;
+    left:35px;
+    width:150px;
+    height:10px;
+    background:#777;
+    border-radius:8px;
+}
+
+/* =========================
+   ПОЛУМ'Я
+========================= */
+
+.flame{
+    position:absolute;
+    bottom:48px;
+    left:50%;
+    transform:translateX(-50%);
+    width:45px;
+    height:70px;
+    opacity:0;
+    z-index:5;
+}
+
+.flame.active{
+    opacity:1;
+    animation:flameAnimation .45s infinite alternate;
+}
+
+.flame::before{
+    content:"";
+    position:absolute;
+    width:38px;
+    height:58px;
+    left:4px;
+    top:8px;
+    background:#ff8c00;
+    border-radius:50% 50% 45% 45%;
+    transform:rotate(180deg);
+}
+
+.flame::after{
+    content:"";
+    position:absolute;
+    width:20px;
+    height:35px;
+    left:13px;
+    top:24px;
+    background:#ffe066;
+    border-radius:50% 50% 45% 45%;
+    transform:rotate(180deg);
+}
+
+@keyframes flameAnimation{
+    from{
+        transform:translateX(-50%) scale(1);
+    }
+    to{
+        transform:translateX(-50%) scale(1.1);
+    }
+}
+
+.table-surface{
+    position:absolute;
+    bottom:12px;
+    left:5%;
+    width:90%;
+    height:12px;
+    background:#555;
+    border-radius:8px;
+}
+
+/* =========================
+   ПОКАЗНИКИ
+========================= */
+
+.readings{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    margin-top:18px;
+}
+
+.reading{
+    background:#f1f5f9;
+    border-radius:9px;
+    padding:13px;
+    text-align:center;
+}
+
+.reading-title{
+    font-size:13px;
+    color:#65717d;
+}
+
+.reading-value{
+    margin-top:5px;
+    font-size:22px;
+    font-weight:bold;
+    color:#174a7c;
+}
+
+/* =========================
+   КНОПКИ
+========================= */
+
+.buttons{
+    display:flex;
+    gap:10px;
+    margin-top:18px;
+}
+
+button{
+    border:0;
+    border-radius:8px;
+    padding:12px 16px;
+    font-size:14px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+button:hover{
+    opacity:.9;
+}
+
+.start-button{
+    flex:2;
+    background:#198754;
+    color:white;
+}
+
+.record-button{
+    flex:2;
+    background:#2878bd;
+    color:white;
+}
+
+.reset-button{
+    flex:1;
+    background:#dc3545;
+    color:white;
+}
+
+/* =========================
+   ФОРМУЛА
+========================= */
+
+.formula{
+    margin-top:15px;
+    padding:13px;
+    text-align:center;
+    background:#fff8df;
+    border:1px solid #e7d48b;
+    border-radius:8px;
+}
+
+.formula-main{
+    font-size:20px;
+    font-weight:bold;
+}
+
+.formula-info{
+    margin-top:7px;
+    font-size:14px;
+    line-height:1.45;
+}
+
+.hint{
+    margin-top:12px;
+    color:#4c5965;
+    font-size:14px;
+    line-height:1.45;
+}
+
+/* =========================
+   ТАБЛИЦЯ
+========================= */
+
+.results{
+    margin-top:20px;
+}
+
+.results h2{
+    margin:0 0 15px;
+    color:#174a7c;
+}
+
+.table-wrapper{
+    overflow-x:auto;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th,
+td{
+    border:1px solid #c8d2dc;
+    padding:9px;
+    text-align:center;
+}
+
+th{
+    background:#174a7c;
+    color:white;
+}
+
+tr:nth-child(even){
+    background:#f5f8fb;
+}
+
+.delete-button{
+    background:#dc3545;
+    color:white;
+    padding:6px 10px;
+}
+
+.clear-button{
+    margin-top:12px;
+    background:#6c757d;
+    color:white;
+}
+
+/* =========================
+   АДАПТИВНІСТЬ
+========================= */
+
+@media(max-width:850px){
+
+    .parameters{
+        grid-template-columns:1fr 1fr;
+    }
+
+    .thermometer{
+        right:8%;
+    }
+}
+
+@media(max-width:600px){
+
+    .experiments{
+        flex-direction:column;
+    }
+
+    .parameters{
+        grid-template-columns:1fr;
+    }
+
+    .readings{
+        grid-template-columns:1fr;
+    }
+
+    .buttons{
+        flex-direction:column;
+    }
+
+    .beaker{
+        width:230px;
+    }
+
+    .thermometer{
+        right:10px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+
+<h1>
+Лабораторна робота
+</h1>
+
+<p>
+Дослідження залежності кількості теплоти від маси,
+зміни температури та виду речовини
+</p>
+
+</header>
+
+
+<div class="container">
+
+<div class="lab-window">
+
+<!-- =========================================
+     ТРИ ДОСЛІДИ В ОДНОМУ ВІКНІ
+========================================= -->
+
+<div class="experiments">
+
+<button
+class="experiment-btn active"
+onclick="selectExperiment(1)">
+
+Дослід 1 – залежність від маси
+
+</button>
+
+<button
+class="experiment-btn"
+onclick="selectExperiment(2)">
+
+Дослід 2 – залежність від зміни температури
+
+</button>
+
+<button
+class="experiment-btn"
+onclick="selectExperiment(3)">
+
+Дослід 3 – залежність від виду речовини
+
+</button>
+
+</div>
+
+
+<!-- =========================================
+     ОПИС
+========================================= -->
+
+<div class="description">
+
+<h2 id="experimentTitle">
+
+Дослід 1. Дослідження залежності кількості
+теплоти від маси речовини
+
+</h2>
+
+<p id="experimentDescription">
+
+Змінюйте масу речовини та порівнюйте її нагрівання
+за однаковий час. 
+
+</p>
+
+</div>
+
+
+<!-- =========================================
+     ПАРАМЕТРИ
+========================================= -->
+
+<div class="parameters">
+
+<div class="parameter">
+
+<label>
+Вид речовини
+</label>
+
+<select id="substance">
+
+<option value="water">
+Вода
+</option>
+
+<option value="oil">
+Олія
+</option>
+
+<option value="alcohol">
+Спирт
+</option>
+
+<option value="custom">
+Інша речовина
+</option>
+
+</select>
+
+</div>
+
+
+<div class="parameter">
+
+<label>
+Маса речовини, г
+</label>
+
+<input
+id="mass"
+type="number"
+value="200"
+min="10"
+max="1000"
+step="10"
+>
+
+</div>
+
+
+<div class="parameter">
+
+<label>
+Початкова температура, °C
+</label>
+
+<input
+id="startTemp"
+type="number"
+value="20"
+>
+
+</div>
+
+
+<div class="parameter">
+
+<label>
+Кінцева температура, °C
+</label>
+
+<input
+id="maxTemp"
+type="number"
+value="100"
+>
+
+</div>
+
+</div>
+
+
+<!-- =========================================
+     ВЛАСНА РЕЧОВИНА
+========================================= -->
+
+<div id="customHeatBox">
+
+<div class="parameter">
+
+<label>
+Питома теплоємність, Дж/(кг·°C)
+</label>
+
+<input
+id="customHeat"
+type="number"
+value="3000"
+min="1"
+>
+
+</div>
+
+</div>
+
+
+<!-- =========================================
+     СИМУЛЯЦІЯ
+========================================= -->
+
+<div class="simulation">
+
+<div class="beaker">
+
+<div
+class="liquid"
+id="liquid">
+</div>
+
+</div>
+
+
+<!-- Термометр -->
+
+<div class="thermometer">
+
+<div
+class="current-temperature"
+id="currentTemperature">
+
+20.0 °C
+
+</div>
+
+<div class="thermometer-tube">
+
+<div
+class="mercury"
+id="mercury">
+</div>
+
+</div>
+
+<div class="thermometer-bulb"></div>
+
+</div>
+
+
+<!-- Полум'я -->
+
+<div
+class="flame"
+id="flame">
+</div>
+
+
+<!-- Нагрівач -->
+
+<div class="heater">
+
+<div class="heater-coil"></div>
+
+</div>
+
+
+<div class="table-surface"></div>
+
+</div>
+
+
+<!-- =========================================
+     ПОТОЧНІ ПОКАЗИ
+========================================= -->
+
+<div class="readings">
+
+<div class="reading">
+
+<div class="reading-title">
+Час нагрівання
+</div>
+
+<div
+class="reading-value"
+id="timer">
+
+00:00.00
+
+</div>
+
+</div>
+
+
+<div class="reading">
+
+<div class="reading-title">
+Поточна температура
+</div>
+
+<div
+class="reading-value"
+id="tempValue">
+
+20.0 °C
+
+</div>
+
+</div>
+
+
+<div class="reading">
+
+<div class="reading-title">
+Зміна температури
+</div>
+
+<div
+class="reading-value"
+id="deltaValue">
+
+0.0 °C
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- =========================================
+     КНОПКИ
+========================================= -->
+
+<div class="buttons">
+
+<button
+class="start-button"
+id="startButton"
+onclick="toggleHeating()">
+
+▶ Розпочати нагрівання
+
+</button>
+
+
+<button
+class="record-button"
+onclick="recordMeasurement()">
+
+＋ Записати покази
+
+</button>
+
+
+<button
+class="reset-button"
+onclick="resetExperiment()">
+
+↺ Скинути
+
+</button>
+
+</div>
+
+
+<!-- =========================================
+     ФОРМУЛА
+========================================= -->
+
+<div class="formula">
+
+<div class="formula-main">
+
+Q = c · m · Δt
+
+</div>
+
+<div
+class="formula-info"
+id="formulaInfo">
+
+Q – кількість теплоти;
+c – питома теплоємність;
+m – маса речовини;
+Δt – зміна температури.
+
+</div>
+
+</div>
+
+
+<div class="hint">
+
+Змініть параметри речовини, запустіть нагрівання
+та натисніть «Записати покази», щоб занести
+результат до таблиці. Для кожного досліду можна
+виконати кілька вимірювань в одному вікні.
+
+</div>
+
+</div>
+
+
+<!-- =========================================
+     РЕЗУЛЬТАТИ
+========================================= -->
+
+<div class="results">
+
+<h2>
+Результати вимірювань
+</h2>
+
+
+<div class="table-wrapper">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>№</th>
+<th>Дослід</th>
+<th>Речовина</th>
+<th>Маса, г</th>
+<th>Час, с</th>
+<th>Температура, °C</th>
+<th>Δt, °C</th>
+<th>Дія</th>
+
+</tr>
+
+</thead>
+
+<tbody id="resultsBody">
+</tbody>
+
+</table>
+
+</div>
+
+
+<button
+class="clear-button"
+onclick="clearTable()">
+
+Очистити таблицю
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+<script>
+
+/* =========================================
+   РЕЧОВИНИ
+========================================= */
+
+const substances = {
+
+water:{
+    name:"Вода",
+    c:4200,
+    color:"rgba(45,150,220,.65)"
+},
+
+oil:{
+    name:"Олія",
+    c:2000,
+    color:"rgba(230,190,60,.75)"
+},
+
+alcohol:{
+    name:"Спирт",
+    c:2400,
+    color:"rgba(180,210,230,.65)"
+},
+
+custom:{
+    name:"Інша речовина",
+    c:3000,
+    color:"rgba(150,150,150,.65)"
+}
+
+};
+
+
+/* =========================================
+   ОПИС ТРЬОХ ДОСЛІДІВ
+========================================= */
+
+const experimentInfo = {
+
+1:{
+
+title:
+"Дослід 1. Дослідження залежності кількості теплоти від маси речовини",
+
+description:
+"Змінюйте масу речовини та порівнюйте, наскільки вона нагрівається за однаковий час."
+
+},
+
+2:{
+
+title:
+"Дослід 2. Дослідження залежності кількості теплоти від зміни температури",
+
+description:
+"Порівнюйте нагрівання однакової маси речовини за різної зміни температури."
+
+},
+
+3:{
+
+title:
+"Дослід 3. Дослідження залежності кількості теплоти від виду речовини",
+
+description:
+"Порівнюйте нагрівання однакової маси різних речовин за однаковий час."
+
+}
+
+};
+
+
+/* =========================================
+   ЗМІННІ
+========================================= */
+
+let selectedExperiment = 1;
+
+let running = false;
+
+let elapsed = 0;
+
+let currentTemperature = 20;
+
+let timerInterval = null;
+
+let lastTime = null;
+
+
+/* =========================================
+   ОТРИМАННЯ ПАРАМЕТРІВ
+========================================= */
+
+function getParameters(){
+
+const substance =
+document.getElementById("substance").value;
+
+const mass =
+Number(
+document.getElementById("mass").value
+);
+
+const start =
+Number(
+document.getElementById("startTemp").value
+);
+
+const max =
+Number(
+document.getElementById("maxTemp").value
+);
+
+let c =
+substances[substance].c;
+
+
+if(substance === "custom"){
+
+c =
+Number(
+document.getElementById("customHeat").value
+);
+
+}
+
+
+return{
+substance,
+mass,
+start,
+max,
+c
+};
+
+}
+
+
+/* =========================================
+   РОЗРАХУНОК ЧАСУ
+========================================= */
+
+function calculateRequiredTime(){
+
+const p =
+getParameters();
+
+const power = 187;
+
+const deltaT =
+p.max - p.start;
+
+
+/*
+Q = c · m · Δt
+
+Q = P · t
+
+t = c · m · Δt / P
+*/
+
+return(
+p.c *
+(p.mass / 1000) *
+deltaT
+) / power;
+
+}
+
+
+/* =========================================
+   ВИБІР ДОСЛІДУ
+========================================= */
+
+function selectExperiment(number){
+
+if(running){
+stopHeating();
+}
+
+selectedExperiment =
+number;
+
+
+document
+.querySelectorAll(".experiment-btn")
+.forEach(
+(button,index)=>{
+
+button.classList.toggle(
+"active",
+index + 1 === number
+);
+
+}
+);
+
+
+document.getElementById(
+"experimentTitle"
+).textContent =
+experimentInfo[number].title;
+
+
+document.getElementById(
+"experimentDescription"
+).textContent =
+experimentInfo[number].description;
+
+
+resetExperiment();
+
+}
+
+
+/* =========================================
+   ЗАПУСК НАГРІВАННЯ
+========================================= */
+
+function toggleHeating(){
+
+if(running){
+
+stopHeating();
+
+return;
+
+}
+
+
+const p =
+getParameters();
+
+
+if(p.mass <= 0){
+
+alert(
+"Маса повинна бути більшою за 0 г."
+);
+
+return;
+
+}
+
+
+if(p.max <= p.start){
+
+alert(
+"Кінцева температура повинна бути більшою за початкову."
+);
+
+return;
+
+}
+
+
+if(currentTemperature >= p.max){
+
+elapsed = 0;
+
+currentTemperature =
+p.start;
+
+}
+
+
+running = true;
+
+lastTime =
+Date.now();
+
+
+document.getElementById(
+"startButton"
+).textContent =
+"■ Зупинити нагрівання";
+
+
+document.getElementById(
+"flame"
+).classList.add("active");
+
+
+timerInterval =
+setInterval(()=>{
+
+const now =
+Date.now();
+
+const dt =
+(now - lastTime) / 1000;
+
+lastTime =
+now;
+
+elapsed += dt;
+
+const parameters =
+getParameters();
+
+
+/*
+Δt = P · t / (c · m)
+
+Тому:
+
+більша маса →
+повільніше нагрівання;
+
+більша питома теплоємність →
+повільніше нагрівання.
+*/
+
+const deltaTemperature =
+(
+187 *
+elapsed
+)
+/
+(
+parameters.c *
+(parameters.mass / 1000)
+);
+
+
+currentTemperature =
+parameters.start +
+deltaTemperature;
+
+
+if(
+currentTemperature >=
+parameters.max
+){
+
+currentTemperature =
+parameters.max;
+
+elapsed =
+calculateRequiredTime();
+
+updateInterface();
+
+stopHeating();
+
+return;
+
+}
+
+
+updateInterface();
+
+},50);
+
+}
+
+
+/* =========================================
+   ЗУПИНКА
+========================================= */
+
+function stopHeating(){
+
+running = false;
+
+clearInterval(
+timerInterval
+);
+
+document.getElementById(
+"flame"
+).classList.remove("active");
+
+
+const p =
+getParameters();
+
+
+if(
+currentTemperature >=
+p.max
+){
+
+document.getElementById(
+"startButton"
+).textContent =
+"▶ Розпочати новий дослід";
+
+}else{
+
+document.getElementById(
+"startButton"
+).textContent =
+"▶ Продовжити нагрівання";
+
+}
+
+}
+
+
+/* =========================================
+   ОНОВЛЕННЯ
+========================================= */
+
+function updateInterface(){
+
+const p =
+getParameters();
+
+
+const delta =
+currentTemperature -
+p.start;
+
+
+document.getElementById(
+"currentTemperature"
+).textContent =
+currentTemperature.toFixed(1)
++ " °C";
+
+
+document.getElementById(
+"tempValue"
+).textContent =
+currentTemperature.toFixed(1)
++ " °C";
+
+
+document.getElementById(
+"deltaValue"
+).textContent =
+delta.toFixed(1)
++ " °C";
+
+
+document.getElementById(
+"timer"
+).textContent =
+formatTime(elapsed);
+
+
+/* Колір речовини */
+
+document.getElementById(
+"liquid"
+).style.background =
+substances[p.substance].color;
+
+
+/* Рівень рідини */
+
+const liquidHeight =
+Math.min(
+35 +
+(p.mass / 1000) * 55,
+90
+);
+
+
+document.getElementById(
+"liquid"
+).style.height =
+liquidHeight + "%";
+
+
+/* Термометр */
+
+const range =
+p.max - p.start;
+
+let progress =
+(
+currentTemperature -
+p.start
+) / range;
+
+progress =
+Math.max(
+0,
+Math.min(progress,1)
+);
+
+
+const mercuryHeight =
+15 +
+progress * 80;
+
+
+document.getElementById(
+"mercury"
+).style.height =
+mercuryHeight + "%";
+
+}
+
+
+/* =========================================
+   ФОРМАТ ЧАСУ
+========================================= */
+
+function formatTime(seconds){
+
+const minutes =
+Math.floor(seconds / 60);
+
+const sec =
+Math.floor(seconds % 60);
+
+const hundredths =
+Math.floor(
+(seconds % 1) * 100
+);
+
+return(
+String(minutes).padStart(2,"0")
++
+":"
++
+String(sec).padStart(2,"0")
++
+"."
++
+String(hundredths).padStart(2,"0")
+);
+
+}
+
+
+/* =========================================
+   ЗАПИС ПОКАЗІВ
+========================================= */
+
+function recordMeasurement(){
+
+if(elapsed <= 0){
+
+alert(
+"Спочатку розпочніть нагрівання."
+);
+
+return;
+
+}
+
+
+const p =
+getParameters();
+
+const delta =
+currentTemperature -
+p.start;
+
+const tbody =
+document.getElementById(
+"resultsBody"
+);
+
+const row =
+document.createElement("tr");
+
+const number =
+tbody.children.length + 1;
+
+
+row.innerHTML = `
+
+<td>
+${number}
+</td>
+
+<td>
+Дослід ${selectedExperiment}
+</td>
+
+<td>
+${substances[p.substance].name}
+</td>
+
+<td>
+${p.mass}
+</td>
+
+<td>
+${elapsed.toFixed(2)}
+</td>
+
+<td>
+${currentTemperature.toFixed(1)}
+</td>
+
+<td>
+${delta.toFixed(1)}
+</td>
+
+<td>
+
+<button
+class="delete-button"
+onclick="deleteRow(this)">
+
+Видалити
+
+</button>
+
+</td>
+
+`;
+
+
+tbody.appendChild(row);
+
+}
+
+
+/* =========================================
+   ВИДАЛЕННЯ
+========================================= */
+
+function deleteRow(button){
+
+button
+.closest("tr")
+.remove();
+
+renumberTable();
+
+}
+
+
+/* =========================================
+   НУМЕРАЦІЯ
+========================================= */
+
+function renumberTable(){
+
+document
+.querySelectorAll(
+"#resultsBody tr"
+)
+.forEach(
+(row,index)=>{
+
+row.cells[0].textContent =
+index + 1;
+
+}
+);
+
+}
+
+
+/* =========================================
+   СКИДАННЯ
+========================================= */
+
+function resetExperiment(){
+
+stopHeating();
+
+const p =
+getParameters();
+
+elapsed = 0;
+
+currentTemperature =
+p.start;
+
+document.getElementById(
+"timer"
+).textContent =
+"00:00.00";
+
+document.getElementById(
+"startButton"
+).textContent =
+"▶ Розпочати нагрівання";
+
+updateInterface();
+
+}
+
+
+/* =========================================
+   ЗМІНА РЕЧОВИНИ
+========================================= */
+
+document
+.getElementById("substance")
+.addEventListener(
+"change",
+function(){
+
+const box =
+document.getElementById(
+"customHeatBox"
+);
+
+
+if(this.value === "custom"){
+
+box.style.display =
+"block";
+
+}else{
+
+box.style.display =
+"none";
+
+}
+
+
+if(!running){
+
+resetExperiment();
+
+}
+
+}
+);
+
+
+/* =========================================
+   ЗМІНА ПАРАМЕТРІВ
+========================================= */
+
+document
+.querySelectorAll(
+"#mass,#startTemp,#maxTemp,#customHeat"
+)
+.forEach(
+input=>{
+
+input.addEventListener(
+"change",
+function(){
+
+if(!running){
+
+resetExperiment();
+
+}
+
+}
+);
+
+}
+);
+
+
+/* =========================================
+   ОЧИЩЕННЯ ТАБЛИЦІ
+========================================= */
+
+function clearTable(){
+
+document.getElementById(
+"resultsBody"
+).innerHTML = "";
+
+}
+
+
+/* =========================================
+   ПОЧАТКОВИЙ СТАН
+========================================= */
+
+updateInterface();
+
+</script>
+
+</body>
+</html>
